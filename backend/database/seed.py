@@ -31,8 +31,12 @@ def seed_assets():
         # Seed assets
         all_companies = get_all_index_companies()
         added = 0
+        seen_tickers = set()
         for c in all_companies:
             ticker = c["ticker"]
+            if ticker in seen_tickers:
+                continue
+            seen_tickers.add(ticker)
             existing = db.query(Asset).filter_by(id=ticker).first()
             if not existing:
                 asset = Asset(
