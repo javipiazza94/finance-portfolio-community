@@ -1,13 +1,18 @@
 """backend/tests/test_llm_providers.py — LLM provider factory tests."""
 import asyncio
+import json
 import pytest
+
+import httpx as httpx_module
 
 from services.llm.providers import get_provider
 from services.llm.providers.lmstudio import LMStudioProvider
 from services.llm.providers.ollama import OllamaProvider
 from services.llm.providers.openai_compatible import OpenAICompatibleProvider
+from services.llm.providers.anthropic import AnthropicProvider
 import services.llm.providers.ollama as ollama_mod
 import services.llm.providers.openai_compatible as openai_compatible_mod
+import services.llm.providers.anthropic as anthropic_mod
 
 
 def test_get_provider_returns_lmstudio_by_name():
@@ -73,3 +78,44 @@ def test_openai_compatible_provider_uses_configured_settings(monkeypatch):
     assert captured["base_url"] == "https://api.example.com/v1"
     assert captured["model"] == "gpt-4o-mini"
     assert captured["api_key"] == "sk-test"
+
+
+def test_get_provider_returns_anthropic_by_name():
+    provider = get_provider("anthropic")
+    assert isinstance(provider, AnthropicProvider)
+
+
+def test_anthropic_provider_raises_without_api_key(monkeypatch):
+    monkeypatch.setattr(anthropic_mod.config, "ANTHROPIC_API_KEY", "")
+
+    with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):
+        asyncio.run(AnthropicProvider().complete("sys", "usr"))
+
+
+def test_anthropic_provider_sends_expected_payload(monkeypatch):
+    monkeypatch.setattr(anthropic_mod.config, "ANTHROPIC_API_KEY", "sk-ant-test")
+    monkeypatch.setattr(anthropic_mod.config, "ANTHROPIC_MODEL", "claude-sonnet-4-5")
+
+    captured = {}
+
+    def handler(request: httpx_module.Request) -> httpx_module.Response:
+        captured["headers"] = dict(request.headers)
+        captured["body"] = json.loads(request.content)
+        return httpx_module.Response(200, json={"content": [{"text": "anthropic reply"}]})
+
+    transport = httpx_module.MockTransport(handler)
+    real_async_client = httpx_module.AsyncClient
+
+    def fake_async_client(*args, **kwargs):
+        kwargs["transport"] = transport
+        return real_async_client(*args, **kwargs)
+
+    monkeypatch.setattr("services.llm.providers.anthropic.httpx.AsyncClient", fake_async_client)
+
+    result = asyncio.run(AnthropicProvider().complete("sys", "usr"))
+
+    assert result == "anthropic reply"
+    assert captured["headers"]["x-api-key"] == "sk-ant-test"
+    assert captured["body"]["model"] == "claude-sonnet-4-5"
+    assert captured["body"]["system"] == "sys"
+    assert captured["body"]["messages"] == [{"role": "user", "content": "usr"}]

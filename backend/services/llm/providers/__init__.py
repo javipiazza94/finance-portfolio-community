@@ -2,6 +2,7 @@
 from typing import Dict, Type
 
 from ..base import LLMProvider
+from .anthropic import AnthropicProvider
 from .lmstudio import LMStudioProvider
 from .ollama import OllamaProvider
 from .openai_compatible import OpenAICompatibleProvider
@@ -10,6 +11,7 @@ _REGISTRY: Dict[str, Type[LLMProvider]] = {
     "lmstudio": LMStudioProvider,
     "ollama": OllamaProvider,
     "openai_compatible": OpenAICompatibleProvider,
+    "anthropic": AnthropicProvider,
 }
 
 
