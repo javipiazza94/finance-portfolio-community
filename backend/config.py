@@ -37,3 +37,8 @@ LM_STUDIO_MODEL = os.environ.get("LM_STUDIO_MODEL", "local-model")
 # Ollama (local, OpenAI-compatible endpoint) — recommended default
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.1")
+
+# Generic OpenAI-compatible endpoint (OpenAI, OpenRouter, Groq, Together, vLLM, LocalAI, ...)
+OPENAI_COMPATIBLE_BASE_URL = os.environ.get("OPENAI_COMPATIBLE_BASE_URL", "https://api.openai.com/v1")
+OPENAI_COMPATIBLE_API_KEY = os.environ.get("OPENAI_COMPATIBLE_API_KEY", "")
+OPENAI_COMPATIBLE_MODEL = os.environ.get("OPENAI_COMPATIBLE_MODEL", "gpt-4o-mini")
