@@ -26,5 +26,10 @@ API_HOST = os.environ.get("API_HOST", "0.0.0.0")
 API_PORT = int(os.environ.get("API_PORT", "8000"))
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:3000,http://localhost:3005,http://localhost:3001").split(",")
 
+# AI provider routing (company analysis)
+# One of: lmstudio | ollama | openai_compatible | anthropic
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "lmstudio")
+
 # LM Studio (local LLM, OpenAI-compatible API)
 LM_STUDIO_URL = os.environ.get("LM_STUDIO_URL", "http://localhost:1234")
+LM_STUDIO_MODEL = os.environ.get("LM_STUDIO_MODEL", "local-model")

@@ -1,23 +1,15 @@
-import httpx
-import json
-import logging
-from typing import Dict, Any, Optional
+"""backend/services/llm/prompts.py — Prompt templates and the offline fallback payload."""
+import hashlib
+from typing import Any, Dict, Optional
 
-logger = logging.getLogger(__name__)
+SYSTEM_PROMPT = "You are a helpful financial assistant that outputs only valid JSON."
 
-# Default LM Studio local API URL
-LM_STUDIO_API_URL = "http://localhost:1234/v1/chat/completions"
 
-# You can adapt the model name to whichever is currently loaded in LM Studio
-# But most local setups ignore it and just use the loaded model.
-DEFAULT_MODEL = "local-model"
-
-async def generate_company_analysis(ticker: str, company_name: str, financial_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """
-    Generates a company analysis scorecard using a local LLM via LM Studio.
-    """
-    
-    # We can pass some basic financial context if available
+def build_analysis_prompt(
+    ticker: str,
+    company_name: str,
+    financial_data: Optional[Dict[str, Any]] = None,
+) -> str:
     context_str = ""
     if financial_data:
         context_str = f"""
@@ -28,7 +20,7 @@ Financial Context:
 - Revenue Growth: {financial_data.get('revenue_growth', 'N/A')}
 """
 
-    prompt = f"""You are a rigorous sell-side equity analyst. Analyze {company_name} ({ticker}) and produce a differentiated scorecard.
+    return f"""You are a rigorous sell-side equity analyst. Analyze {company_name} ({ticker}) and produce a differentiated scorecard.
 {context_str}
 
 ## SCORING RULES — read carefully before assigning any number
@@ -87,53 +79,13 @@ Respond STRICTLY with a valid JSON object — no markdown, no extra text:
 }}
 """
 
-    payload = {
-        "model": DEFAULT_MODEL,
-        "messages": [
-            {"role": "system", "content": "You are a helpful financial assistant that outputs only valid JSON."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.2,
-        "max_tokens": 2000,
-        "stream": False
-    }
-
-    try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            response = await client.post(LM_STUDIO_API_URL, json=payload)
-            response.raise_for_status()
-
-            data = response.json()
-            message = data["choices"][0]["message"]
-            # DeepSeek R1 and similar reasoning models put the actual output in
-            # `content`; when content is empty they use `reasoning_content` only.
-            content = message.get("content") or message.get("reasoning_content") or ""
-
-            # Clean up the response in case the LLM wrapped it in markdown code blocks
-            content = content.strip()
-            if content.startswith("```json"):
-                content = content[7:]
-            if content.startswith("```"):
-                content = content[3:]
-            if content.endswith("```"):
-                content = content[:-3]
-                
-            parsed_json = json.loads(content)
-            return parsed_json
-            
-    except Exception as e:
-        logger.error(f"Error generating LLM analysis for {ticker}: {e}")
-        # Return a fallback/mock payload in case LM Studio is not running or errors out
-        return get_mock_analysis(ticker, company_name)
 
 def get_mock_analysis(ticker: str, company_name: str) -> Dict[str, Any]:
-    """Fallback mock analysis if the LLM is unavailable, with pseudo-random but deterministic values."""
-    import hashlib
-    # Simple deterministic pseudo-random number based on ticker
+    """Deterministic offline fallback used when no LLM provider is reachable."""
     h = int(hashlib.md5(ticker.encode()).hexdigest(), 16)
-    
-    score = 40 + (h % 55) + ((h % 100) / 100.0) # Score between 40 and 95
-    
+
+    score = 40 + (h % 55) + ((h % 100) / 100.0)  # Score between 40 and 95
+
     if score >= 80:
         recommendation = "ATTRACTIVE - Buy"
         color = "green"
@@ -180,5 +132,5 @@ def get_mock_analysis(ticker: str, company_name: str) -> Dict[str, Any]:
             "Execution risk in new growth initiatives.",
             "Currency exposure may weigh on reported earnings.",
         ],
-        "thesis": f"While {company_name} faces some macro challenges, its core business remains robust."
+        "thesis": f"While {company_name} faces some macro challenges, its core business remains robust.",
     }
