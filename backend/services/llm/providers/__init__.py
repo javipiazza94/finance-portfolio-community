@@ -3,9 +3,11 @@ from typing import Dict, Type
 
 from ..base import LLMProvider
 from .lmstudio import LMStudioProvider
+from .ollama import OllamaProvider
 
 _REGISTRY: Dict[str, Type[LLMProvider]] = {
     "lmstudio": LMStudioProvider,
+    "ollama": OllamaProvider,
 }
 
 
@@ -15,7 +17,7 @@ def get_provider(name: str) -> LLMProvider:
     Raises ValueError for anything not in the registry — `core.py` catches
     this (and any other provider error) and falls back to the mock payload.
     """
-    key = (name or "lmstudio").strip().lower()
+    key = (name or "ollama").strip().lower()
     provider_cls = _REGISTRY.get(key)
     if provider_cls is None:
         raise ValueError(

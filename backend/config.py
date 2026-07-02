@@ -28,8 +28,12 @@ CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:3000,http://loca
 
 # AI provider routing (company analysis)
 # One of: lmstudio | ollama | openai_compatible | anthropic
-LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "lmstudio")
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "ollama")
 
 # LM Studio (local LLM, OpenAI-compatible API)
 LM_STUDIO_URL = os.environ.get("LM_STUDIO_URL", "http://localhost:1234")
 LM_STUDIO_MODEL = os.environ.get("LM_STUDIO_MODEL", "local-model")
+
+# Ollama (local, OpenAI-compatible endpoint) — recommended default
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.1")
