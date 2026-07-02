@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+
+# Build / cache
+.next/
+__pycache__/
+*.pyc
+
+# Database (regenerated + seeded on startup)
+*.db
+
+# Secrets — NUNCA subir
+.env
+.env.*
+!.env.example
+*.pem
+credentials.json
+backend/vapid_private.pem
+backend/vapid_public.txt
+
+# Claude / tooling
+.claude/settings.local.json
+temp/
+.gstack/
