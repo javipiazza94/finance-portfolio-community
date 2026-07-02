@@ -8,6 +8,7 @@ services:
       - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
       - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1}
+      - DB_PATH=/app/data/finance_portfolio.db
     volumes:
       - backend_data:/app/data
 

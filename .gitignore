@@ -24,3 +24,4 @@ backend/vapid_public.txt
 .claude/settings.local.json
 temp/
 .gstack/
+.superpowers/

@@ -15,9 +15,9 @@ uvicorn main:app --reload --port 8000
 
 # Frontend (separate terminal)
 cd frontend
-npm install
+pnpm install
 echo "NEXT_PUBLIC_API_URL=http://localhost:8000/api" > .env.local
-npm run dev
+pnpm dev
 ```
 
 Or with Docker: `docker compose up --build`.

@@ -5,11 +5,11 @@ Migrated from: stock-dashboard/app.py (indicator endpoints)
 """
 from datetime import datetime, timezone
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from config import LM_STUDIO_URL
+from services.llm.providers import get_provider
+import config
 from database.connection import get_db
 from database.models import Indicator, Quote
 
@@ -180,7 +180,7 @@ def get_active_signals(db: Session = Depends(get_db)):
 
 @router.get("/{ticker}/ai-summary")
 async def get_ai_summary(ticker: str, db: Session = Depends(get_db)):
-    """LM Studio AI analysis for a ticker based on its latest technical indicators."""
+    """AI analysis for a ticker based on its latest technical indicators, via the configured LLM provider."""
     ind = (
         db.query(Indicator)
         .filter_by(ticker=ticker.upper())
@@ -219,32 +219,17 @@ async def get_ai_summary(ticker: str, db: Session = Depends(get_db)):
     )
 
     try:
-        async with httpx.AsyncClient(timeout=45.0) as client:
-            resp = await client.post(
-                f"{LM_STUDIO_URL}/v1/chat/completions",
-                json={
-                    "model": "local-model",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.4,
-                    "max_tokens": 300,
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            analysis = data["choices"][0]["message"]["content"].strip()
-    except httpx.ConnectError:
-        raise HTTPException(
-            status_code=503,
-            detail="LM Studio no está disponible en localhost:1234. Ábrelo y carga un modelo.",
-        )
-    except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="LM Studio tardó demasiado en responder.")
+        provider = get_provider(config.LLM_PROVIDER)
+        analysis = (await provider.complete("You are a financial analyst assistant.", prompt)).strip()
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Error en LM Studio: {exc}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"AI provider '{config.LLM_PROVIDER}' unavailable: {exc}",
+        )
 
     return {
         "ticker": ticker.upper(),
         "analysis": analysis,
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "model": data.get("model", "local-model"),
+        "model": config.LLM_PROVIDER,
     }

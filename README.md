@@ -58,9 +58,9 @@ Check http://localhost:8000/health → `{"status":"ok",...}`
 
 ```bash
 cd frontend
-npm install
+pnpm install
 echo "NEXT_PUBLIC_API_URL=http://localhost:8000/api" > .env.local
-npm run dev
+pnpm dev
 ```
 
 Open http://localhost:3000
@@ -106,7 +106,7 @@ Adding a new provider is a single file — see `CONTRIBUTING.md`.
 ## Notes
 
 - The SQLite database is created and seeded automatically on first run
-  (~211 assets + 8 model portfolios). It is not versioned; delete
+  (~660 assets + 8 model portfolios). It is not versioned; delete
   `backend/finance_portfolio.db` to start fresh.
 - Never commit `.env`, `.env.local`, or `vapid_private.pem` — already covered
   by `.gitignore`. Use `.env.example` as the template.
